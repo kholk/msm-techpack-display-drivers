@@ -21,6 +21,10 @@
 #include "sde_dbg.h"
 #include "dsi_parser.h"
 
+#ifdef CONFIG_DRM_SDE_SPECIFIC_PANEL
+#include "../../somc_panel/somc_panel_exts.h"
+#endif /* CONFIG_DRM_SDE_SPECIFIC_PANEL */
+
 #define to_dsi_display(x) container_of(x, struct dsi_display, host)
 #define INT_BASE_10 10
 
@@ -32,6 +36,11 @@
 
 #define DSI_CLOCK_BITRATE_RADIX 10
 #define MAX_TE_SOURCE_ID  2
+
+#ifdef CONFIG_DRM_SDE_SPECIFIC_PANEL
+#define DELAY_SET_BACKLIGHT_TIME 100
+#define SET_BRIGHTNESS_VALUE 2047
+#endif /* CONFIG_DRM_SDE_SPECIFIC_PANEL */
 
 static char dsi_display_primary[MAX_CMDLINE_PARAM_LEN];
 static char dsi_display_secondary[MAX_CMDLINE_PARAM_LEN];
@@ -246,7 +255,11 @@ error:
 	return rc;
 }
 
+#ifdef CONFIG_DRM_SDE_SPECIFIC_PANEL
+int dsi_display_cmd_engine_enable(struct dsi_display *display)
+#else
 static int dsi_display_cmd_engine_enable(struct dsi_display *display)
+#endif
 {
 	int rc = 0;
 	int i;
@@ -290,7 +303,11 @@ done:
 	return rc;
 }
 
+#ifdef CONFIG_DRM_SDE_SPECIFIC_PANEL
+int dsi_display_cmd_engine_disable(struct dsi_display *display)
+#else
 static int dsi_display_cmd_engine_disable(struct dsi_display *display)
+#endif  /* CONFIG_DRM_SDE_SPECIFIC_PANEL */
 {
 	int rc = 0;
 	int i;
@@ -476,7 +493,11 @@ error:
 }
 
 /* Allocate memory for cmd dma tx buffer */
+#ifdef CONFIG_DRM_SDE_SPECIFIC_PANEL
+int dsi_host_alloc_cmd_tx_buffer(struct dsi_display *display)
+#else
 static int dsi_host_alloc_cmd_tx_buffer(struct dsi_display *display)
+#endif
 {
 	int rc = 0, cnt = 0;
 	struct dsi_display_ctrl *display_ctrl;
@@ -3809,6 +3830,14 @@ static int dsi_display_res_init(struct dsi_display *display)
 		goto error_ctrl_put;
 	}
 
+#ifdef CONFIG_DRM_SDE_SPECIFIC_PANEL
+	rc = dsi_panel_driver_create_fs(display);
+	if (rc) {
+		pr_err("%s: faild dsi_panel_driver_create_fs rc=%d\n", __func__, rc);
+		return rc;
+	}
+#endif /* CONFIG_DRM_SDE_SPECIFIC_PANEL */
+
 	return 0;
 error_ctrl_put:
 	for (i = i - 1; i >= 0; i--) {
@@ -4771,6 +4800,15 @@ static int _dsi_display_dev_init(struct dsi_display *display)
 		goto error;
 	}
 
+#ifdef CONFIG_DRM_SDE_SPECIFIC_PANEL
+	rc = somc_panel_detect(display, &(display->disp_node), 0);
+	if (rc) {
+		pr_err("[%s] Panel detection failed, rc=%d\n",
+			display->name, rc);
+		goto error;
+	}
+#endif /* CONFIG_DRM_SDE_SPECIFIC_PANEL */
+
 	rc = dsi_display_res_init(display);
 	if (rc) {
 		DSI_ERR("[%s] failed to initialize resources, rc=%d\n",
@@ -5281,11 +5319,25 @@ static int dsi_display_init(struct dsi_display *display)
 		goto end;
 	}
 
+#ifdef CONFIG_DRM_MSM_DSI_SOMC_PANEL
+	rc = somc_panel_init(display);
+	if (rc) {
+		pr_err("somc_panel init failed, rc=%d\n", rc);
+		return rc;
+	}
+#endif
+
 	rc = component_add(&pdev->dev, &dsi_display_comp_ops);
 	if (rc)
 		DSI_ERR("component add failed, rc=%d\n", rc);
 
 	DSI_DEBUG("component add success: %s\n", display->name);
+
+#ifdef CONFIG_DRM_SDE_SPECIFIC_PANEL
+	if (display->panel->spec_pdata->oled_disp) {
+		rc = dsi_panel_driver_oled_short_det_init_works(display);
+	}
+#endif /* CONFIG_DRM_SDE_SPECIFIC_PANEL */
 end:
 	return rc;
 }
@@ -5392,6 +5444,12 @@ int dsi_display_dev_probe(struct platform_device *pdev)
 		if (rc)
 			goto end;
 	}
+
+#ifdef CONFIG_DRM_SDE_SPECIFIC_PANEL
+	primary_display = display;
+	pr_notice("%s: Panel Name = %s\n", __func__, display->name);
+#endif /* CONFIG_DRM_SDE_SPECIFIC_PANEL */
+
 
 	return 0;
 end:
@@ -6982,6 +7040,33 @@ end:
 	mutex_unlock(&display->display_lock);
 }
 
+#ifdef CONFIG_DRM_SDE_SPECIFIC_PANEL
+static void dsi_display_set_backlight_det_tmr_func(unsigned long func_data)
+{
+	struct dsi_display *display =
+		(struct dsi_display *)func_data;
+
+	schedule_work(&display->set_backlight_work);
+}
+
+static void dsi_display_set_backlight_work(struct work_struct *work)
+{
+	struct dsi_display *display = NULL;
+	int rc = 0;
+
+	display =  container_of(work, struct dsi_display, set_backlight_work);
+
+	pr_info("[%s] set backlight\n", display->name);
+	rc = dsi_panel_set_backlight(display->panel, SET_BRIGHTNESS_VALUE);
+	if (rc) {
+		pr_err("[%s] set backlight error , rc=%d\n",
+				display->name, rc);
+		return;
+	}
+	dsi_panel_driver_reset_chargemon_exit();
+}
+#endif /* CONFIG_DRM_SDE_SPECIFIC_PANEL */
+
 static int dsi_display_cb_error_handler(void *data,
 		uint32_t event_idx, uint32_t instance_idx,
 		uint32_t data0, uint32_t data1,
@@ -7031,6 +7116,14 @@ static void dsi_display_register_error_handler(struct dsi_display *display)
 				dsi_display_handle_fifo_overflow);
 	INIT_WORK(&display->lp_rx_timeout_work,
 				dsi_display_handle_lp_rx_timeout);
+#ifdef CONFIG_DRM_SDE_SPECIFIC_PANEL
+	INIT_WORK(&display->set_backlight_work,
+				dsi_display_set_backlight_work);
+
+	setup_timer(&display->det_timer,
+			dsi_display_set_backlight_det_tmr_func,
+			(unsigned long)display);
+#endif /* CONFIG_DRM_SDE_SPECIFIC_PANEL */
 
 	memset(&event_info, 0, sizeof(event_info));
 
@@ -7067,6 +7160,9 @@ int dsi_display_prepare(struct dsi_display *display)
 {
 	int rc = 0;
 	struct dsi_display_mode *mode;
+#ifdef CONFIG_DRM_SDE_SPECIFIC_PANEL
+	int chargemon_exit = 0;
+#endif /* CONFIG_DRM_SDE_SPECIFIC_PANEL */
 
 	if (!display) {
 		DSI_ERR("Invalid params\n");
@@ -7205,6 +7301,21 @@ int dsi_display_prepare(struct dsi_display *display)
 			}
 		}
 	}
+
+#ifdef CONFIG_DRM_SDE_SPECIFIC_PANEL
+	chargemon_exit = dsi_panel_driver_get_chargemon_exit();
+	pr_debug("[%s] check chargemon_exit = %d\n",
+			display->name, chargemon_exit);
+	if (chargemon_exit) {
+		pr_info("[%s] set timer\n", display->name);
+		mod_timer(&display->det_timer,
+			jiffies + msecs_to_jiffies(DELAY_SET_BACKLIGHT_TIME));
+	}
+
+	if (display->is_cont_splash_enabled)
+		somc_panel_cont_splash_touch_enable(display->panel);
+
+#endif /* CONFIG_DRM_SDE_SPECIFIC_PANEL */
 	goto error;
 
 error_ctrl_link_off:
@@ -7509,6 +7620,9 @@ int dsi_display_enable(struct dsi_display *display)
 	 * resource init and hence we return early
 	 */
 	if (display->is_cont_splash_enabled) {
+#ifdef CONFIG_DRM_SDE_SPECIFIC_PANEL
+		struct dsi_display_mode *adj_mode = NULL;
+#endif
 
 		dsi_display_config_ctrl_for_cont_splash(display);
 
@@ -7521,6 +7635,66 @@ int dsi_display_enable(struct dsi_display *display)
 
 		display->panel->panel_initialized = true;
 		DSI_DEBUG("cont splash enabled, display enable not required\n");
+#ifdef CONFIG_DRM_SDE_SPECIFIC_PANEL
+		rc = dsi_panel_driver_enable(display->panel);
+
+		/*
+		 * Start re-setting during continuous splash to perform mode
+		 * set before the first frame, if requested by the DT
+		 * configuration property
+		 */
+		mode = display->panel->cur_mode;
+		if (!(mode->dsi_mode_flags & DSI_MODE_FLAG_DMS))
+			return 0;
+
+		/*
+		 * At this point the panel is ON from bootloader (displaying
+		 * the splash screen) and the Command Mode Engine is also up:
+		 * send the commands to switch the resolution NOW!
+		 */
+		pr_info("[%s] Dynamic Mode Setting: switching now!\n",
+			display->name);
+		rc = dsi_panel_post_switch(display->panel);
+		if (rc)
+			pr_warn("[%s] Cannot send post-switch cmd: %d\n",
+				display->name, rc);
+
+		/* If Display Stream Compression is required, update params. */
+		if (mode->priv_info->dsc_enabled) {
+			mode->priv_info->dsc.pic_width *= display->ctrl_count;
+			rc = dsi_panel_update_pps(display->panel);
+			if (rc)
+				pr_warn("[%s] Cannot update PPS: %d\n",
+					display->name, rc);
+		}
+
+		rc = dsi_panel_switch(display->panel);
+		if (rc) {
+			pr_err("[%s] CRITICAL: Cannot switch resolution: "
+			       "rc = %d - Returning failure and "
+			       "hoping for DSI recovery...\n",
+				display->name, rc);
+			return rc;
+		}
+
+		/*
+		 * Find the entry for the current DRM mode structure:
+		 * beware that panel->cur_mode is only an internal cache.
+		 */
+		rc = dsi_display_find_mode(display, mode, &adj_mode);
+		if (unlikely(rc)) {
+			pr_err("[%s] This is impossible! Can't find mode!\n",
+				__func__);
+			return rc;
+		}
+
+		/* Reset the splash_dms flag: we're out of cont splash now */
+		adj_mode->splash_dms = false;
+
+		/* Remove the DMS flag, since we have already switched */
+		adj_mode->dsi_mode_flags &= ~DSI_MODE_FLAG_DMS;
+
+#endif /* CONFIG_DRM_SDE_SPECIFIC_PANEL */
 		return 0;
 	}
 
@@ -7615,11 +7789,19 @@ int dsi_display_post_enable(struct dsi_display *display)
 
 		if (display->config.panel_mode == DSI_OP_VIDEO_MODE)
 			dsi_panel_mode_switch_to_vid(display->panel);
+#ifdef CONFIG_DRM_SDE_SPECIFIC_PANEL
+	} else if (!display->panel->spec_pdata->display_onoff_state) {
+		rc = dsi_panel_post_enable(display->panel);
+		if (rc)
+			DSI_ERR("[%s] panel post-enable failed, rc=%d\n",
+				display->name, rc);
+#else
 	} else {
 		rc = dsi_panel_post_enable(display->panel);
 		if (rc)
 			DSI_ERR("[%s] panel post-enable failed, rc=%d\n",
 				display->name, rc);
+#endif
 	}
 
 	/* remove the clk vote for CMD mode panels */
