@@ -3454,14 +3454,14 @@ static void sde_kms_dualdsi_workaround(struct sde_kms *sde_kms)
 		dsi_display = dsi_displays[i];
 
 		if (unlikely(!dsi_display) ||
-		    unlikely(!dsi_display->disp_node))
+		    unlikely(!dsi_display->panel_node))
 			continue;
 
 		/* Makes no sense if not using more than one CTRL and PHY */
 		if (dsi_display->ctrl_count < 2)
 			continue;
 
-		set_split_flush = of_property_read_bool(dsi_display->disp_node,
+		set_split_flush = of_property_read_bool(dsi_display->panel_node,
 						"qcom,set-split-flush-reg-wa");
 
 		/*
