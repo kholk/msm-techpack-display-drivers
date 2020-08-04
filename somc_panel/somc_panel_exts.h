@@ -26,8 +26,8 @@
 #include <linux/incell.h>
 #include <linux/types.h>
 #include <uapi/drm/msm_drm_pp.h>
-#include <../../drivers/gpu/drm/msm/dsi-staging/dsi_panel.h>
-#include <../../drivers/gpu/drm/msm/dsi-staging/dsi_display.h>
+#include <../../techpack/display/msm/dsi/dsi_panel.h>
+#include <../../techpack/display/msm/dsi/dsi_display.h>
 
 /* dcs read/write */
 #define DTYPE_DCS_WRITE		0x05	/* short write, 0 parameter */
