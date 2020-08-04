@@ -51,9 +51,21 @@ static struct dsi_display_boot_param boot_displays[MAX_DSI_ACTIVE_DISPLAY] = {
 };
 
 static const struct of_device_id dsi_display_dt_match[] = {
+#ifdef CONFIG_DRM_SDE_SPECIFIC_PANEL
+	{.compatible = "somc,dsi-display"},
+#endif
 	{.compatible = "qcom,dsi-display"},
 	{}
 };
+
+#ifdef CONFIG_DRM_SDE_SPECIFIC_PANEL
+static struct dsi_display *primary_display;
+
+struct dsi_display *dsi_display_get_main_display(void)
+{
+	return primary_display;
+}
+#endif
 
 static void dsi_display_mask_ctrl_error_interrupts(struct dsi_display *display,
 			u32 mask, bool enable)
