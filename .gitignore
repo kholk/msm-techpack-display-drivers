@@ -29,6 +29,7 @@
 *.symtypes
 *.tar
 *.xz
+*.builtin
 
 *.orig
 *.rej
