@@ -22,6 +22,7 @@
 #include "dsi_parser.h"
 
 #ifdef CONFIG_DRM_SDE_SPECIFIC_PANEL
+#include <linux/timer.h>
 #include "../../somc_panel/somc_panel_exts.h"
 #endif /* CONFIG_DRM_SDE_SPECIFIC_PANEL */
 
@@ -7041,10 +7042,9 @@ end:
 }
 
 #ifdef CONFIG_DRM_SDE_SPECIFIC_PANEL
-static void dsi_display_set_backlight_det_tmr_func(unsigned long func_data)
+static void dsi_display_set_backlight_det_tmr_func(struct timer_list *t)
 {
-	struct dsi_display *display =
-		(struct dsi_display *)func_data;
+	struct dsi_display *display = from_timer(display, t, det_timer);
 
 	schedule_work(&display->set_backlight_work);
 }
@@ -7120,9 +7120,8 @@ static void dsi_display_register_error_handler(struct dsi_display *display)
 	INIT_WORK(&display->set_backlight_work,
 				dsi_display_set_backlight_work);
 
-	setup_timer(&display->det_timer,
-			dsi_display_set_backlight_det_tmr_func,
-			(unsigned long)display);
+	timer_setup(&display->det_timer,
+			dsi_display_set_backlight_det_tmr_func, 0);
 #endif /* CONFIG_DRM_SDE_SPECIFIC_PANEL */
 
 	memset(&event_info, 0, sizeof(event_info));
