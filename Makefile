@@ -42,3 +42,4 @@ endif # !CONFIG_DISP_TARGET_NO_DISPLAY
 obj-$(CONFIG_DRM_MSM) += msm/
 obj-$(CONFIG_MSM_SDE_ROTATOR) += rotator/
 obj-$(CONFIG_QCOM_MDSS_PLL) += pll/
+obj-$(CONFIG_DRM_MSM_DSI_SOMC_PANEL) += somc_panel/
