@@ -671,6 +671,11 @@ struct dsi_display_mode {
 	enum dsi_op_mode panel_mode;
 	bool is_preferred;
 	struct dsi_display_mode_priv_info *priv_info;
+
+#ifdef CONFIG_DRM_SDE_SPECIFIC_PANEL
+	bool isDefault;
+	bool splash_dms;
+#endif /* CONFIG_DRM_SDE_SPECIFIC_PANEL */
 };
 
 /**
