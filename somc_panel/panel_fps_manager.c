@@ -26,8 +26,6 @@
 #include <linux/notifier.h>
 #include <linux/export.h>
 #include "somc_panel_exts.h"
-#include "dsi_display.h"
-#include "dsi_panel.h"
 
 int somc_panel_parse_dt_chgfps_config(struct dsi_panel *panel,
 			struct device_node *np)

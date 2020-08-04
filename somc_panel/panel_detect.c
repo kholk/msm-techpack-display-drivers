@@ -26,8 +26,6 @@
 #include <linux/notifier.h>
 #include <linux/export.h>
 #include "somc_panel_exts.h"
-#include "dsi_display.h"
-#include "dsi_panel.h"
 
 #define PANEL_SKIP_ID		0xff
 #define ADC_RNG_MIN		0

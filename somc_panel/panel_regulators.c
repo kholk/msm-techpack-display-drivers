@@ -27,8 +27,6 @@
 #include <linux/export.h>
 #include <linux/regulator/qpnp-labibb-regulator.h>
 #include "somc_panel_exts.h"
-#include "dsi_display.h"
-#include "dsi_panel.h"
 
 int somc_panel_vregs_parse_dt(struct dsi_panel *panel,
 					struct device_node *np)

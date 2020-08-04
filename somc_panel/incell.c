@@ -26,8 +26,6 @@
 #include <linux/device.h>
 #include <linux/sde_io_util.h>
 
-#include "dsi_display.h"
-#include "dsi_panel.h"
 #include "somc_panel_exts.h"
 
 struct incell_ctrl *incell;

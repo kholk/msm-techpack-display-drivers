@@ -27,8 +27,6 @@
 #include <linux/export.h>
 #include <linux/regulator/qpnp-labibb-regulator.h>
 #include "somc_panel_exts.h"
-#include "dsi_display.h"
-#include "dsi_panel.h"
 
 int vreg_name_to_config(struct dsi_regulator_info *regs,
 			struct dsi_vreg *config, char *name)

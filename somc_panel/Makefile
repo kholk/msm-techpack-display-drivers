@@ -1,7 +1,7 @@
 #
 # Makefile for the unified DRM display driver for SoMC Open Devices
 #
-ccflags-y := -Iinclude/drm -Idrivers/gpu/drm/msm -Idrivers/gpu/drm/msm/dsi-staging -Idrivers/gpu/drm/msm/dp
+ccflags-y := -Iinclude/drm -Itechpack/display/msm -Itechpack/display/msm/dsi -Itechpack/display/msm/dp
 
 somc_panel-$(CONFIG_DRM_MSM_DSI_SOMC_PANEL)	+= common.o
 somc_panel-$(CONFIG_DRM_MSM_DSI_SOMC_PANEL)	+= dsi_panel_driver.o

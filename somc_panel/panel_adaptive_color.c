@@ -26,10 +26,8 @@
 #include <linux/notifier.h>
 #include <linux/export.h>
 #include "somc_panel_exts.h"
-#include "dsi_display.h"
-#include "dsi_panel.h"
-#include "../sde/sde_crtc.h"
-#include "../sde/sde_plane.h"
+#include "../msm/sde/sde_crtc.h"
+#include "../msm/sde/sde_plane.h"
 
 
 int somc_panel_parse_dt_adaptivecolor_config(struct dsi_panel *panel,

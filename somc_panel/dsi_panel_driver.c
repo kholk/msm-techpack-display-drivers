@@ -32,8 +32,6 @@
 #include <linux/workqueue.h>
 #include <linux/interrupt.h>
 #include "somc_panel_exts.h"
-#include "dsi_display.h"
-#include "dsi_panel.h"
 
 #define AOD_MODE_THRESHOLD 8
 
