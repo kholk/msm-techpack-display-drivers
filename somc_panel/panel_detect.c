@@ -82,7 +82,7 @@ static int adc_panel_detect(struct dsi_display *display,
 					res[ADC_RNG_MAX] < adc_uv)
 			continue;
 
-		display->panel_of = next;
+		display->panel_node = next;
 
 		/* If we have just detected the default panel, go on */
 		if (res[ADC_RNG_MIN] == 0 && res[ADC_RNG_MAX] == 0x7fffffff)
@@ -105,7 +105,7 @@ static inline int single_panel_setup(struct dsi_display *display,
 		return -ENOENT;
 	}
 
-	display->panel_of = pan;
+	display->panel_node = pan;
 
 	return 0;
 }
